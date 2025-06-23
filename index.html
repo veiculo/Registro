@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gestão de Veículos</title>
+  <base href="/Registro/">
   <style>
     body {
       font-family: sans-serif;
@@ -63,207 +64,206 @@
   <div id="app"></div>
 
   <script>
-    const apiURL = "https://script.google.com/macros/s/AKfycbw39MMohgpjrEkKwMFB3K5ZQfxlItvz9pW9K3SZZW6dDIIm5TEjsWIkosl-jVFSUI-4zA/exec";
+    window.addEventListener('DOMContentLoaded', () => {
+      const apiURL = "https://script.google.com/macros/s/AKfycbw39MMohgpjrEkKwMFB3K5ZQfxlItvz9pW9K3SZZW6dDIIm5TEjsWIkosl-jVFSUI-4zA/exec";
 
-    const veiculos = [
-      { modelo: 'FIAT CRONOS', placa: 'TDT-6C28', km: 0, condutor: '', status: 'Disponível' },
-      { modelo: 'FIAT CRONOS', placa: 'TDT-6C31', km: 0, condutor: '', status: 'Disponível' },
-      { modelo: 'FIAT STRADA', placa: 'TJC-0H20', km: 0, condutor: '', status: 'Disponível' },
-      { modelo: 'FIAT ARGO', placa: 'SYX-0065', km: 0, condutor: '', status: 'Disponível' }
-    ];
+      const veiculos = [
+        { modelo: 'FIAT CRONOS', placa: 'TDT-6C28', km: 0, condutor: '', status: 'Disponível' },
+        { modelo: 'FIAT CRONOS', placa: 'TDT-6C31', km: 0, condutor: '', status: 'Disponível' },
+        { modelo: 'FIAT STRADA', placa: 'TJC-0H20', km: 0, condutor: '', status: 'Disponível' },
+        { modelo: 'FIAT ARGO', placa: 'SYX-0065', km: 0, condutor: '', status: 'Disponível' }
+      ];
 
-    const condutores = ["Castelo", "Lucas", "Fernanda"];
-    const app = document.getElementById('app');
+      const condutores = ["Castelo", "Lucas", "Fernanda"];
+      const app = document.getElementById('app');
 
-    veiculos.forEach((v, i) => {
-      const div = document.createElement('div');
-      div.className = 'vehicle-card';
-      div.dataset.index = i;
-      div.innerHTML = `
-        <h2>${v.modelo}</h2>
-        <p><strong>Placa:</strong> ${v.placa}</p>
-        <div class="status">${v.status}</div>
-        <p class="status-msg">Pronto para a próxima viagem!</p>
-        <p class="km-atual">KM Atual: ${v.km}</p>
+      veiculos.forEach((v, i) => {
+        const card = document.createElement('div');
+        card.className = 'vehicle-card';
+        card.dataset.index = i;
+        card.innerHTML = `
+          <h2>${v.modelo}</h2>
+          <p><strong>Placa:</strong> ${v.placa}</p>
+          <div class="status">${v.status}</div>
+          <p class="status-msg">Pronto para a próxima viagem!</p>
+          <p class="km-atual">KM Atual: ${v.km}</p>
 
-        <form class="formulario saida">
-          <label>Condutor</label>
-          <select name="condutor"></select>
+          <form class="formulario saida">
+            <label>Condutor</label>
+            <select name="condutor"></select>
 
-          <label>Destino</label>
-          <input name="destino" />
+            <label>Destino</label>
+            <input name="destino" />
 
-          <label>Motivo</label>
-          <textarea name="motivo"></textarea>
+            <label>Motivo</label>
+            <textarea name="motivo"></textarea>
 
-          <label>Data</label>
-          <input name="data" type="date" />
+            <label>Data</label>
+            <input name="data" type="date" />
 
-          <label>Hora</label>
-          <input name="hora" type="time" />
+            <label>Hora</label>
+            <input name="hora" type="time" />
 
-          <button type="button" onclick="registrarSaida(this)">Confirmar Saída</button>
-        </form>
+            <button type="button" onclick="registrarSaida(this)">Confirmar Saída</button>
+          </form>
 
-        <form class="formulario chegada">
-          <label>Condutor</label>
-          <input name="condutor" readonly />
+          <form class="formulario chegada">
+            <label>Condutor</label>
+            <input name="condutor" readonly />
 
-          <label>Abastecimento</label>
-          <select name="abastecimento">
-            <option value="1">1</option>
-            <option value="3/4">3/4</option>
-            <option value="1/2">1/2</option>
-            <option value="1/4">1/4</option>
-          </select>
+            <label>Abastecimento</label>
+            <select name="abastecimento">
+              <option value="1">1</option>
+              <option value="3/4">3/4</option>
+              <option value="1/2">1/2</option>
+              <option value="1/4">1/4</option>
+            </select>
 
-          <label>Observação</label>
-          <textarea name="observacao"></textarea>
+            <label>Observação</label>
+            <textarea name="observacao"></textarea>
 
-          <label>KM Atual</label>
-          <input name="km" type="number" min="0" />
+            <label>KM Atual</label>
+            <input name="km" type="number" min="0" />
 
-          <label>Data</label>
-          <input name="data" type="date" />
+            <label>Data</label>
+            <input name="data" type="date" />
 
-          <label>Hora</label>
-          <input name="hora" type="time" />
+            <label>Hora</label>
+            <input name="hora" type="time" />
 
-          <button type="button" onclick="registrarChegada(this)">Confirmar Chegada</button>
-        </form>
-      `;
-
-      div.addEventListener('click', (e) => {
-        if (!e.target.closest('form') && !e.target.closest('button')) {
-          document.querySelectorAll('.formulario').forEach(f => f.style.display = 'none');
-
-          if (veiculos[i].status === 'Disponível') {
-            const saidaForm = div.querySelector('.formulario.saida');
-            preencherCondutores(saidaForm.querySelector('select[name="condutor"]'));
-            saidaForm.style.display = 'flex';
-          } else {
-            const chegadaForm = div.querySelector('.formulario.chegada');
-            chegadaForm.querySelector('input[name="condutor"]').value = veiculos[i].condutor || '';
-            chegadaForm.style.display = 'flex';
+            <button type="button" onclick="registrarChegada(this)">Confirmar Chegada</button>
+          </form>
+        `;
+        card.addEventListener('click', (e) => {
+          if (!e.target.closest('form') && !e.target.closest('button')) {
+            document.querySelectorAll('.formulario').forEach(f => f.style.display = 'none');
+            const form = veiculos[i].status === 'Disponível'
+              ? card.querySelector('.formulario.saida')
+              : card.querySelector('.formulario.chegada');
+            if (veiculos[i].status === 'Disponível') {
+              preencherCondutores(form.querySelector('select[name="condutor"]'));
+            } else {
+              form.querySelector('input[name="condutor"]').value = veiculos[i].condutor || '';
+            }
+            form.style.display = 'flex';
           }
+        });
+        app.appendChild(card);
+      });
+
+      function preencherCondutores(selectEl) {
+        selectEl.innerHTML = "";
+        condutores.forEach(nome => {
+          const opt = document.createElement("option");
+          opt.value = nome;
+          opt.textContent = nome;
+          selectEl.appendChild(opt);
+        });
+      }
+
+      function enviarRegistro(dados) {
+        return fetch(apiURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dados)
+        }).then(res => res.text());
+      }
+
+      window.registrarSaida = function(btn) {
+        btn.disabled = true;
+        const card = btn.closest('.vehicle-card');
+        const i = +card.dataset.index;
+        const form = card.querySelector('.formulario.saida');
+        const formData = new FormData(form);
+        const condutor = formData.get("condutor");
+        const destino = formData.get("destino");
+        const motivo = formData.get("motivo");
+        const data = formData.get("data");
+        const hora = formData.get("hora");
+
+        if (!condutor || !destino || !motivo || !data || !hora) {
+          alert("Preencha todos os campos obrigatórios.");
+          btn.disabled = false;
+          return;
         }
-      });
 
-      app.appendChild(div);
+        const dados = {
+          tipo: "Saída",
+          condutor,
+          placa: veiculos[i].placa,
+          destino,
+          motivo,
+          abastecimento: "",
+          observacao: "",
+          km: veiculos[i].km,
+          data,
+          hora
+        };
+
+        enviarRegistro(dados)
+          .then(() => {
+            alert("Saída registrada com sucesso!");
+            veiculos[i].status = 'Em Uso';
+            veiculos[i].condutor = condutor;
+            card.querySelector('.status').textContent = 'Em Uso';
+            card.querySelector('.status-msg').textContent = 'Veículo em uso. Clique para registrar chegada.';
+            form.style.display = 'none';
+          })
+          .catch(() => alert("Erro ao registrar saída."))
+          .finally(() => btn.disabled = false);
+      };
+
+      window.registrarChegada = function(btn) {
+        btn.disabled = true;
+        const card = btn.closest('.vehicle-card');
+        const i = +card.dataset.index;
+        const form = card.querySelector('.formulario.chegada');
+        const formData = new FormData(form);
+        const km = parseInt(formData.get("km"));
+
+        if (isNaN(km)) {
+          alert("Informe o KM atual corretamente.");
+          btn.disabled = false;
+          return;
+        }
+
+        const dados = {
+          tipo: "Chegada",
+          condutor: formData.get("condutor"),
+          placa: veiculos[i].placa,
+          destino: "",
+          motivo: "",
+          abastecimento: formData.get("abastecimento"),
+          observacao: formData.get("observacao"),
+          km,
+          data: formData.get("data"),
+          hora: formData.get("hora")
+        };
+
+        if (!dados.data || !dados.hora || !dados.abastecimento) {
+          alert("Preencha todos os campos obrigatórios.");
+          btn.disabled = false;
+          return;
+        }
+
+        enviarRegistro(dados)
+          .then(() => {
+            alert("Chegada registrada com sucesso!");
+                    enviarRegistro(dados)
+          .then(() => {
+            alert("Chegada registrada com sucesso!");
+            veiculos[i].km = km;
+            veiculos[i].status = 'Disponível';
+            veiculos[i].condutor = '';
+            card.querySelector('.km-atual').textContent = `KM Atual: ${km}`;
+            card.querySelector('.status').textContent = 'Disponível';
+            card.querySelector('.status-msg').textContent = 'Pronto para a próxima viagem!';
+            form.style.display = 'none';
+          })
+          .catch(() => alert("Erro ao registrar chegada."))
+          .finally(() => btn.disabled = false);
+      };
     });
-
-    function preencherCondutores(selectEl) {
-      selectEl.innerHTML = "";
-      condutores.forEach(nome => {
-        const opt = document.createElement("option");
-        opt.value = nome;
-        opt.textContent = nome;
-        selectEl.appendChild(opt);
-      });
-    }
-
-    function enviarRegistro(dados) {
-      return fetch(apiURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dados)
-      }).then(res => res.text());
-    }
-
-    function registrarSaida(btn) {
-      btn.disabled = true;
-
-      const card = btn.closest('.vehicle-card');
-      const i = parseInt(card.getAttribute('data-index'));
-      const form = card.querySelector('.formulario.saida');
-      const formData = new FormData(form);
-
-      const condutor = formData.get("condutor");
-      const destino = formData.get("destino");
-      const motivo = formData.get("motivo");
-      const data = formData.get("data");
-      const hora = formData.get("hora");
-
-      if (!condutor || !destino || !motivo || !data || !hora) {
-        alert("Preencha todos os campos obrigatórios.");
-        btn.disabled = false;
-        return;
-      }
-
-      const dados = {
-        tipo: "Saída",
-        condutor,
-        placa: veiculos[i].placa,
-        destino,
-        motivo,
-        abastecimento: "",
-        observacao: "",
-        km: veiculos[i].km,
-        data,
-        hora
-      };
-
-      enviarRegistro(dados)
-        .then(() => {
-          alert("Saída registrada com sucesso!");
-          veiculos[i].status = 'Em Uso';
-          veiculos[i].condutor = condutor;
-          card.querySelector('.status').textContent = 'Em Uso';
-          card.querySelector('.status-msg').textContent = 'Veículo em uso. Clique para registrar chegada.';
-          form.style.display = 'none';
-        })
-        .catch(() => alert("Erro ao registrar saída."))
-        .finally(() => btn.disabled = false);
-    }
-
-    function registrarChegada(btn) {
-      btn.disabled = true;
-
-      const card = btn.closest('.vehicle-card');
-      const i = parseInt(card.getAttribute('data-index'));
-      const form = card.querySelector('.formulario.chegada');
-      const formData = new FormData(form);
-      const km = parseInt(formData.get("km"));
-
-      if (isNaN(km)) {
-        alert("Informe o KM atual corretamente.");
-        btn.disabled = false;
-        return;
-      }
-
-      const dados = {
-        tipo: "Chegada",
-        condutor: formData.get("condutor"),
-        placa: veiculos[i].placa,
-        destino: "",
-        motivo: "",
-        abastecimento: formData.get("abastecimento"),
-        observacao: formData.get("observacao"),
-        km,
-        data: formData.get("data"),
-        hora: formData.get("hora")
-      };
-
-      if (!dados.data || !dados.hora || !dados.abastecimento) {
-        alert("Preencha todos os campos obrigatórios.");
-        btn.disabled = false;
-        return;
-      }
-
-      enviarRegistro(dados)
-        .then(() => {
-          alert("Chegada registrada com sucesso!");
-          veiculos[i].km = km;
-          veiculos[i].status = 'Disponível';
-          veiculos[i].condutor = '';
-          card.querySelector('.km-atual').textContent = `KM Atual: ${km}`;
-          card.querySelector('.status').textContent = 'Disponível';
-          card.querySelector('.status-msg').textContent = 'Pronto para a próxima viagem!';
-          form.style.display = 'none';
-        })
-        .catch(() => alert("Erro ao registrar chegada."))
-        .finally(() => btn.disabled = false);
-    }
   </script>
 </body>
 </html>
