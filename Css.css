@@ -1,0 +1,59 @@
+:root {
+  --primary: #1e293b;
+  --secondary: #334155;
+  --available: #10b981;
+  --in-use: #f59e0b;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--primary);
+  color: white;
+  margin: 0;
+  padding: 20px;
+  line-height: 1.6;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.vehicle-card {
+  background: var(--secondary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.status {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
+.vehicle-card.disponível .status {
+  background: var(--available);
+}
+
+.vehicle-card.em-uso .status {
+  background: var(--in-use);
+}
+
+.nojs-warning {
+  color: #ef4444;
+  text-align: center;
+  padding: 1rem;
+  font-weight: bold;
+}
+
+@media (min-width: 768px) {
+  #app {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+}
