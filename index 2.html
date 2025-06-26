@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Veículos Offline</title>
+  <meta name="theme-color" content="#1e293b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gestão Veículos">
+  <style>
+    /* RESET E ESTILOS GLOBAIS */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    
+    body {
+      background: #1e293b;
+      color: white;
+      padding: 20px;
+      line-height: 1.6;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* LAYOUT PRINCIPAL */
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px 0;
+      border-bottom: 1px solid #475569;
+      position: relative;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    #app {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 25px;
+      margin: 0 auto;
+      max-width: 1400px;
+    }
+
+    /* CARDS DE VEÍCULOS */
+    .vehicle-card {
+      background: #334155;
+      border-radius: 10px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+
+    /* Efeito de contorno para veículo em uso */
+    .vehicle-card.em-uso {
+      border-color: #f59e0b;
+    }
+
+    .vehicle-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .vehicle-card h2 {
+      font-size: 1.4rem;
+      margin-bottom: 10px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .vehicle-card p {
+      margin: 8px 0;
+      color: #94a3b8;
+    }
+
+    /* Indicador de status (bolinha piscando) */
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .status-indicator.disponivel {
+      background-color: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse-verde 2s infinite;
+    }
+
+    .status-indicator.em-uso {
+      background-color: #f59e0b;
+      box-shadow: 0 0 10px #f59e0b;
+      animation: pulse-laranja 2s infinite;
+    }
+
+    @keyframes pulse-verde {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+
+    @keyframes pulse-laranja {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-weight: bold;
+      margin: 10px 0;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .disponivel {
+      background-color: #10b981;
+    }
+
+    .em-uso {
+      background-color: #f59e0b;
+    }
+
+    /* FORMULÁRIOS */
+    .vehicle-form {
+      display: none;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #475569;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .vehicle-form.show {
+      display: flex;
+    }
+
+    .vehicle-form label {
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    .vehicle-form input,
+    .vehicle-form select,
+    .vehicle-form textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      background: #475569;
+      color: white;
+      font-size: 1rem;
+    }
+
+    .vehicle-form textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .vehicle-form button {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 10px;
+      font-size: 1rem;
+    }
+
+    .vehicle-form button:hover {
+      background-color: #2563eb;
+    }
+
+    /* RESPONSIVIDADE */
+    @media (max-width: 768px) {
+      #app {
+        grid-template-columns: 1fr;
+      }
+      
+      body {
+        padding: 15px;
+      }
+    }
+
+    /* ANIMAÇÕES */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .vehicle-card {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    /* ESTADOS DE CARGA */
+    .loading {
+      text-align: center;
+      padding: 50px;
+      font-size: 1.2rem;
+      color: #94a3b8;
+    }
+
+    .error {
+      color: #ef4444;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* MODAIS */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: #334155;
+      padding: 25px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      animation: fadeIn 0.3s;
+    }
+
+    .modal.large .modal-content {
+      max-width: 800px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-buttons button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #modalCancel {
+      background: #64748b;
+      color: white;
+    }
+
+    #modalConfirm {
+      background: #3b82f6;
+      color: white;
+    }
+
+    /* AUTENTICAÇÃO */
+    .auth-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #475569;
+    }
+
+    .tab-button {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .tab-button.active {
+      color: white;
+      border-bottom: 2px solid #3b82f6;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .auth-form input {
+      padding: 12px;
+      border-radius: 5px;
+      border: 1px solid #475569;
+      background: #1e293b;
+      color: white;
+    }
+
+    .auth-form button {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    /* BOTÃO FLUTUANTE */
+    .floating-button {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      z-index: 90;
+    }
+
+    /* HISTÓRICO */
+    #historyFilters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    #historyFilters select, 
+    #historyFilters input,
+    #historyFilters button {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #475569;
+      background: #1e293b;
+      color: white;
+    }
+
+    #historyContent {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      background: #475569;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+
+    .history-item h4 {
+      margin-bottom: 5px;
+      color: #e2e8f0;
+    }
+
+    .history-item p {
+      margin: 3px 0;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+    
+    /* Botão de logout */
+    #logoutBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    
+    /* Mensagem de abastecimento */
+    .abastecer {
+      color: #ef4444;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+    
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #334155;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 5px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestão de Veículos</h1>
+    <p>Controle corporativo</p>
+    <button id="logoutBtn">Sair</button>
+  </header>
+
+  <main>
+    <div id="app">
+      <div class="loading">Carregando veículos...</div>
+    </div>
+  </main>
+
+  <!-- Modal de Confirmação -->
+  <div id="confirmationModal" class="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle">Confirmar Ação</h3>
+      <p id="modalMessage">Deseja realmente realizar esta ação?</p>
+      <div class="modal-buttons">
+        <button id="modalCancel">Cancelar</button>
+        <button id="modalConfirm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Login/Cadastro -->
+  <div id="authModal" class="modal">
+    <div class="modal-content">
+      <div class="auth-tabs">
+        <button class="tab-button active" data-tab="login">Login</button>
+        <button class="tab-button" data-tab="register">Cadastro</button>
+      </div>
+      
+      <div id="loginForm" class="auth-form">
+        <h3>Login</h3>
+        <input type="email" id="loginEmail" placeholder="E-mail" required>
+        <input type="password" id="loginPassword" placeholder="Senha" required>
+        <button id="loginButton">Entrar</button>
+      </div>
+      
+      <div id="registerForm" class="auth-form" style="display:none;">
+        <h3>Cadastro</h3>
+        <input type="text" id="registerName" placeholder="Nome Completo" required>
+        <input type="email" id="registerEmail" placeholder="E-mail" required>
+        <input type="password" id="registerPassword" placeholder="Senha" required>
+        <button id="registerButton">Cadastrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de Histórico -->
+  <button id="historyButton" class="floating-button">
+    <i class="history-icon">📋</i> Histórico
+  </button>
+
+  <!-- Modal de Histórico -->
+  <div id="historyModal" class="modal">
+    <div class="modal-content large">
+      <h3>Histórico Completo de Utilização</h3>
+      <div id="historyFilters">
+        <select id="historyVehicleFilter">
+          <option value="">Todos os Veículos</option>
+        </select>
+        <select id="historyDriverFilter">
+          <option value="">Todos os Condutores</option>
+        </select>
+        <input type="date" id="historyDateFilter">
+        <button id="applyFilters">Filtrar</button>
+        <button id="showKmReport">Relatório de KM</button>
+      </div>
+      <div id="historyContent"></div>
+      <button id="closeHistory">Fechar</button>
+    </div>
+  </div>
+  
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // =============================================
+    // CONSTANTES E CONFIGURAÇÕES
+    // =============================================
+    const APP_VERSION = "1.2.0";
+    const CACHE_NAME = `veiculos-offline-v${APP_VERSION}`;
+
+    // Dados iniciais padrão
+    const DEFAULT_DATA = [
+      { 
+        modelo: 'FIAT CRONOS', 
+        placa: 'TDT-6C28', 
+        km: 0, 
+        condutor: '', 
+        status: 'Disponível',
+        historico: [],
+        combustivel: '1' // 1, 3/4, 1/2, 1/4
+      },
+      { 
+        modelo: 'FIAT CRONOS', 
+        placa: 'TDT-6C31', 
+        km: 0, 
+        condutor: '', 
+        status: 'Disponível',
+        historico: [],
+        combustivel: '1'
+      },
+      { 
+        modelo: 'FIAT STRADA', 
+        placa: 'TJC-0H20', 
+        km: 0, 
+        condutor: '', 
+        status: 'Disponível',
+        historico: [],
+        combustivel: '1'
+      },
+      { 
+        modelo: 'FIAT ARGO', 
+        placa: 'SYX-0065', 
+        km: 0, 
+        condutor: '', 
+        status: 'Disponível',
+        historico: [],
+        combustivel: '1'
+      }
+    ];
+
+    const DEFAULT_DRIVERS = ["Luiz Castelo", "Lucas M", "L. Fernanda"];
+    const DEFAULT_USERS = [
+      { 
+        nome: "Admin", 
+        email: "admin@empresa.com", 
+        password: "admin123",
+        isAdmin: true 
+      }
+    ];
+
+    // Estado da aplicação
+    let currentUser = null;
+    let pendingAction = null;
+    let activeCard = null;
+
+    // =============================================
+    // FUNÇÕES PRINCIPAIS
+    // =============================================
+
+    /**
+     * Inicializa a aplicação
+     */
+    async function initApp() {
+      try {
+        // Verifica se já existe dados no localStorage
+        if (!localStorage.getItem('veiculos')) {
+          localStorage.setItem('veiculos', JSON.stringify(DEFAULT_DATA));
+        }
+        
+        if (!localStorage.getItem('condutores')) {
+          localStorage.setItem('condutores', JSON.stringify(DEFAULT_DRIVERS));
+        }
+        
+        if (!localStorage.getItem('usuarios')) {
+          localStorage.setItem('usuarios', JSON.stringify(DEFAULT_USERS));
+        }
+        
+        // Verifica autenticação
+        checkAuth();
+        
+        // Configura eventos
+        setupEventListeners();
+        
+      } catch (error) {
+        console.error("Erro ao inicializar app:", error);
+        showError("Falha ao carregar dados. Recarregue a página.");
+      }
+    }
+
+    /**
+     * Verifica se o usuário está autenticado
+     */
+    function checkAuth() {
+      const user = JSON.parse(localStorage.getItem('currentUser'));
+      if (user) {
+        currentUser = user;
+        document.getElementById('app').style.display = 'grid';
+        renderVehicles();
+      } else {
+        document.getElementById('app').style.display = 'none';
+        showAuthModal();
+      }
+    }
+
+    /**
+     * Configura os event listeners
+     */
+    function setupEventListeners() {
+      // Autenticação
+      document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', switchAuthTab);
+      });
+      
+      document.getElementById('loginButton').addEventListener('click', handleLogin);
+      document.getElementById('registerButton').addEventListener('click', handleRegister);
+      
+      // Modal de confirmação
+      document.getElementById('modalConfirm').addEventListener('click', confirmAction);
+      document.getElementById('modalCancel').addEventListener('click', closeModal);
+      
+      // Histórico
+      document.getElementById('historyButton').addEventListener('click', showHistoryModal);
+      document.getElementById('closeHistory').addEventListener('click', () => {
+        document.getElementById('historyModal').style.display = 'none';
+      });
+      document.getElementById('applyFilters').addEventListener('click', renderHistory);
+      document.getElementById('showKmReport').addEventListener('click', gerarRelatorioKm);
+      
+      // Logout
+      document.getElementById('logoutBtn').addEventListener('click', logout);
+    }
+
+    function logout() {
+      if (confirm('Deseja realmente sair?')) {
+        localStorage.removeItem('currentUser');
+        location.reload();
+      }
+    }
+
+    /**
+     * Renderiza os veículos na tela
+     */
+    function renderVehicles() {
+      const app = document.getElementById('app');
+      const veiculos = JSON.parse(localStorage.getItem('veiculos')) || [];
+      const condutores = JSON.parse(localStorage.getItem('condutores')) || [];
+      
+      if (veiculos.length === 0) {
+        app.innerHTML = '<div class="error">Nenhum veículo cadastrado</div>';
+        return;
+      }
+      
+      app.innerHTML = '';
+      
+      veiculos.forEach((veiculo, index) => {
+        const card = document.createElement('div');
+        const statusClass = veiculo.status.toLowerCase().replace('í', 'i');
+        card.className = `vehicle-card ${statusClass === 'em-uso' ? 'em-uso' : ''}`;
+        card.dataset.index = index;
+        
+        const now = new Date();
+        const currentDate = now.toISOString().split('T')[0];
+        const currentTime = now.toTimeString().substring(0, 5);
+        const isInUse = veiculo.status === 'Em uso';
+        
+        card.innerHTML = `
+          <h2>
+            <span class="status-indicator ${statusClass}"></span>
+            ${veiculo.modelo}
+          </h2>
+          <p><strong>Placa:</strong> ${veiculo.placa}</p>
+          <p><strong>KM Atual:</strong> ${veiculo.km.toLocaleString()}</p>
+          <div class="status ${statusClass}">
+            ${veiculo.status}
+          </div>
+          
+          ${isInUse ? `
+            <p><strong>Condutor:</strong> ${veiculo.condutor || 'N/A'}</p>
+          ` : ''}
+          
+          ${veiculo.status === 'Disponível' && veiculo.combustivel === '1/4' ? 
+            `<p class="abastecer">⚠️ Abastecer veículo</p>` : ''}
+          
+          <!-- Formulário de Saída -->
+          <form class="vehicle-form saida-form" ${isInUse ? 'style="display:none;"' : ''}>
+            <label>Condutor:</label>
+            <select name="condutor" required>
+              <option value="">Selecione...</option>
+            </select>
+            
+            <label>Destino:</label>
+            <input type="text" name="destino" required>
+            
+            <label>Data Saída:</label>
+            <input type="date" name="data_saida" value="${currentDate}" required>
+            
+            <label>Hora Saída:</label>
+            <input type="time" name="hora_saida" value="${currentTime}" required>
+            
+            <button type="submit">Registrar Saída</button>
+          </form>
+          
+          <!-- Formulário de Chegada -->
+          <form class="vehicle-form chegada-form" ${!isInUse ? 'style="display:none;"' : ''}>
+            <label>KM Chegada:</label>
+            <input type="number" name="km_chegada" value="${veiculo.km}" required>
+            
+            <label>Data Chegada:</label>
+            <input type="date" name="data_chegada" value="${currentDate}" required>
+            
+            <label>Hora Chegada:</label>
+            <input type="time" name="hora_chegada" value="${currentTime}" required>
+            
+            <label>Nível de Combustível:</label>
+            <select name="combustivel" required>
+              <option value="1" ${veiculo.combustivel === '1' ? 'selected' : ''}>1 (Cheio)</option>
+              <option value="3/4" ${veiculo.combustivel === '3/4' ? 'selected' : ''}>3/4</option>
+              <option value="1/2" ${veiculo.combustivel === '1/2' ? 'selected' : ''}>1/2</option>
+              <option value="1/4" ${veiculo.combustivel === '1/4' ? 'selected' : ''}>1/4</option>
+            </select>
+            
+            <label>Observações:</label>
+            <textarea name="observacoes"></textarea>
+            
+            <button type="submit">Registrar Chegada</button>
+          </form>
+        `;
+        
+        // Preenche condutores no formulário de saída
+        const condutorSelect = card.querySelector('.saida-form select[name="condutor"]');
+        if (condutorSelect) {
+          condutores.forEach(condutor => {
+            const option = document.createElement('option');
+            option.value = condutor;
+            option.textContent = condutor;
+            condutorSelect.appendChild(option);
+          });
+        }
+        
+        // Configura eventos
+        setupCardEvents(card, index, isInUse);
+        
+        app.appendChild(card);
+      });
+      
+      // Atualiza filtros do histórico
+      updateHistoryFilters();
+    }
+
+    function setupCardEvents(card, index, isInUse) {
+      // Mostra/oculta formulário ao clicar no card
+      card.addEventListener('click', (e) => {
+        if (!e.target.closest('form') && e.target.tagName !== 'BUTTON') {
+          // Fecha todos os outros cards
+          if (activeCard && activeCard !== card) {
+            const forms = activeCard.querySelectorAll('.vehicle-form');
+            forms.forEach(form => form.style.display = 'none');
+          }
+          
+          const forms = card.querySelectorAll('.vehicle-form');
+          const shouldShow = forms[0].style.display === 'none';
+          
+          // Oculta todos os formulários primeiro
+          forms.forEach(form => form.style.display = 'none');
+          
+          // Mostra o formulário apropriado
+          if (shouldShow) {
+            if (isInUse) {
+              card.querySelector('.chegada-form').style.display = 'flex';
+            } else {
+              card.querySelector('.saida-form').style.display = 'flex';
+            }
+            activeCard = card;
+          } else {
+            activeCard = null;
+          }
+        }
+      });
+      
+      // Submit do formulário de saída
+      const saidaForm = card.querySelector('.saida-form');
+      if (saidaForm) {
+        saidaForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const formData = new FormData(saidaForm);
+          showConfirmation(
+            'Registrar Saída', 
+            `Deseja registrar a saída do veículo ${card.querySelector('h2').textContent}?`,
+            () => updateVehicleStatus(index, 'Em uso', formData)
+          );
+        });
+      }
+      
+      // Submit do formulário de chegada
+      const chegadaForm = card.querySelector('.chegada-form');
+      if (chegadaForm) {
+        chegadaForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const formData = new FormData(chegadaForm);
+          showConfirmation(
+            'Registrar Chegada', 
+            `Deseja registrar a chegada do veículo ${card.querySelector('h2').textContent}?`,
+            () => updateVehicleStatus(index, 'Disponível', formData)
+          );
+        });
+      }
+    }
+
+    function updateVehicleStatus(index, newStatus, formData) {
+      const veiculos = JSON.parse(localStorage.getItem('veiculos'));
+      const veiculo = veiculos[index];
+      
+      if (newStatus === 'Em uso') {
+        // Atualiza para status "Em uso"
+        veiculos[index] = {
+          ...veiculo,
+          condutor: formData.get('condutor'),
+          destino: formData.get('destino'),
+          status: newStatus,
+          ultimaSaida: {
+            data: formData.get('data_saida'),
+            hora: formData.get('hora_saida'),
+            registradoPor: currentUser.nome
+          }
+        };
+      } else {
+        // Atualiza para status "Disponível"
+        const kmChegada = parseInt(formData.get('km_chegada'));
+        
+        // Valida KM
+        if (kmChegada < veiculo.km) {
+          showToast('A quilometragem de chegada não pode ser menor que a de saída!');
+          return;
+        }
+        
+        veiculos[index] = {
+          ...veiculo,
+          km: kmChegada,
+          status: newStatus,
+          combustivel: formData.get('combustivel'),
+          ultimaChegada: {
+            data: formData.get('data_chegada'),
+            hora: formData.get('hora_chegada'),
+            observacoes: formData.get('observacoes'),
+            registradoPor: currentUser.nome
+          },
+          historico: [
+            ...(veiculo.historico || []),
+            {
+              data_saida: veiculo.ultimaSaida.data,
+              hora_saida: veiculo.ultimaSaida.hora,
+              data_chegada: formData.get('data_chegada'),
+              hora_chegada: formData.get('hora_chegada'),
+              condutor: veiculo.condutor,
+              destino: veiculo.destino,
+              km_percorrido: kmChegada - veiculo.km,
+              registradoPor: currentUser.nome
+            }
+          ]
+        };
+      }
+      
+      localStorage.setItem('veiculos', JSON.stringify(veiculos));
+      renderVehicles();
+      closeModal();
+      backupData();
+    }
+
+    // =============================================
+    // AUTENTICAÇÃO
+    // =============================================
+
+    function showAuthModal() {
+      document.getElementById('authModal').style.display = 'flex';
+    }
+
+    function switchAuthTab(e) {
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      e.target.classList.add('active');
+      
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('registerForm').style.display = 'none';
+      
+      if (e.target.dataset.tab === 'login') {
+        document.getElementById('loginForm').style.display = 'flex';
+      } else {
+        document.getElementById('registerForm').style.display = 'flex';
+      }
+    }
+
+    function handleLogin() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+      const user = usuarios.find(u => u.email === email && u.password === password);
+      
+      if (user) {
+        currentUser = user;
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        document.getElementById('authModal').style.display = 'none';
+        document.getElementById('app').style.display = 'grid';
+        renderVehicles();
+        showToast(`Bem-vindo, ${user.nome.split(' ')[0]}!`);
+        
+        // Adiciona o usuário à lista de condutores se não existir
+        const condutores = JSON.parse(localStorage.getItem('condutores')) || [];
+        if (!condutores.includes(user.nome)) {
+          condutores.push(user.nome);
+          localStorage.setItem('condutores', JSON.stringify(condutores));
+        }
+      } else {
+        showToast('E-mail ou senha incorretos');
+      }
+    }
+
+    function handleRegister() {
+      const nome = document.getElementById('registerName').value;
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      
+      if (!nome || !email || !password) {
+        showToast('Preencha todos os campos');
+        return;
+      }
+      
+      const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+      
+      if (usuarios.some(u => u.email === email)) {
+        showToast('E-mail já cadastrado');
+        return;
+      }
+      
+      const newUser = {
+        nome,
+        email,
+        password,
+        isAdmin: false
+      };
+      
+      usuarios.push(newUser);
+      localStorage.setItem('usuarios', JSON.stringify(usuarios));
+      
+      // Adiciona à lista de condutores
+      const condutores = JSON.parse(localStorage.getItem('condutores')) || [];
+      if (!condutores.includes(nome)) {
+        condutores.push(nome);
+        localStorage.setItem('condutores', JSON.stringify(condutores));
+      }
+      
+      showToast('Cadastro realizado com sucesso! Faça login.');
+      switchAuthTab({ target: document.querySelector('[data-tab="login"]') });
+    }
+
+    // =============================================
+    // MODAL DE CONFIRMAÇÃO
+    // =============================================
+
+    function showConfirmation(title, message, callback) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalMessage').textContent = message;
+      document.getElementById('confirmationModal').style.display = 'flex';
+      
+      pendingAction = callback;
+    }
+
+    function confirmAction() {
+      if (pendingAction) {
+        pendingAction();
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('confirmationModal').style.display = 'none';
+      document.getElementById('authModal').style.display = 'none';
+      document.getElementById('historyModal').style.display = 'none';
+      pendingAction = null;
+    }
+
+    // =============================================
+    // HISTÓRICO
+    // =============================================
+
+    function showHistoryModal() {
+      document.getElementById('historyModal').style.display = 'flex';
+      renderHistory();
+    }
+
+    function updateHistoryFilters() {
+      const veiculos = JSON.parse(localStorage.getItem('veiculos')) || [];
+      const condutores = JSON.parse(localStorage.getItem('condutores')) || [];
+      
+      const vehicleFilter = document.getElementById('historyVehicleFilter');
+      const driverFilter = document.getElementById('historyDriverFilter');
+      
+      // Limpa e atualiza filtro de veículos
+      vehicleFilter.innerHTML = '<option value="">Todos os Veículos</option>';
+      veiculos.forEach(veiculo => {
+        const option = document.createElement('option');
+        option.value = veiculo.placa;
+        option.textContent = `${veiculo.modelo} (${veiculo.placa})`;
+        vehicleFilter.appendChild(option);
+      });
+      
+      // Limpa e atualiza filtro de condutores
+      driverFilter.innerHTML = '<option value="">Todos os Condutores</option>';
+      condutores.forEach(condutor => {
+        const option = document.createElement('option');
+        option.value = condutor;
+        option.textContent = condutor;
+        driverFilter.appendChild(option);
+      });
+    }
+
+    function renderHistory() {
+      const veiculos = JSON.parse(localStorage.getItem('veiculos')) || [];
+      const vehicleFilter = document.getElementById('historyVehicleFilter').value;
+      const driverFilter = document.getElementById('historyDriverFilter').value;
+      const dateFilter = document.getElementById('historyDateFilter').value;
+      
+      let allHistory = [];
+      
+      // Coleta todo o histórico de todos os veículos
+      veiculos.forEach(veiculo => {
+        veiculo.historico.forEach(item => {
+          allHistory.push({
+            ...item,
+            veiculo: veiculo.modelo,
+            placa: veiculo.placa
+          });
+        });
+      });
+      
+      // Aplica filtros
+      let filteredHistory = allHistory;
+      
+      if (vehicleFilter) {
+        filteredHistory = filteredHistory.filter(item => item.placa === vehicleFilter);
+      }
+      
+      if (driverFilter) {
+        filteredHistory = filteredHistory.filter(item => item.condutor === driverFilter);
+      }
+      
+      if (dateFilter) {
+        filteredHistory = filteredHistory.filter(item => 
+          item.data_saida === dateFilter || item.data_chegada === dateFilter
+        );
+      }
+      
+      // Ordena por data de saída (mais recente primeiro)
+      filteredHistory.sort((a, b) => {
+        const dateA = new Date(`${a.data_saida} ${a.hora_saida}`);
+        const dateB = new Date(`${b.data_saida} ${b.hora_saida}`);
+        return dateB - dateA;
+      });
+      
+      // Renderiza o histórico
+      const historyContent = document.getElementById('historyContent');
+      historyContent.innerHTML = '';
+      
+      if (filteredHistory.length === 0) {
+        historyContent.innerHTML = '<p>Nenhum registro encontrado</p>';
+        return;
+      }
+      
+      filteredHistory.forEach(item => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        
+        historyItem.innerHTML = `
+          <h4>${item.veiculo} (${item.placa})</h4>
+          <p><strong>Condutor:</strong> ${item.condutor}</p>
+          <p><strong>Destino:</strong> ${item.destino || 'N/A'}</p>
+          <p><strong>Saída:</strong> ${item.data_saida} às ${item.hora_saida}</p>
+          <p><strong>Chegada:</strong> ${item.data_chegada} às ${item.hora_chegada}</p>
+          <p><strong>KM Percorrido:</strong> ${item.km_percorrido} km</p>
+          <p><strong>Registrado por:</strong> ${item.registradoPor || 'Sistema'}</p>
+        `;
+        
+        historyContent.appendChild(historyItem);
+      });
+    }
+    
+    function gerarRelatorioKm() {
+      const veiculos = JSON.parse(localStorage.getItem('veiculos')) || [];
+      let relatorio = '<h3>Resumo de Quilometragem</h3>';
+      
+      veiculos.forEach(veiculo => {
+        const totalKm = veiculo.historico.reduce((sum, viagem) => 
+          sum + (viagem.km_percorrido || 0), 0);
+        
+        relatorio += `<div class="history-item">
+          <h4>${veiculo.modelo} (${veiculo.placa})</h4>
+          <p><strong>KM Atual:</strong> ${veiculo.km.toLocaleString()}</p>
+          <p><strong>Total Percorrido:</strong> ${totalKm} km</p>
+          <p><strong>Viagens:</strong> ${veiculo.historico.length}</p>
+        </div>`;
+      });
+      
+      // Exibir no modal de histórico
+      document.getElementById('historyContent').innerHTML = relatorio;
+    }
+
+    // =============================================
+    // UTILITÁRIOS
+    // =============================================
+
+    function showError(message) {
+      const app = document.getElementById('app');
+      app.innerHTML = `<div class="error">${message}</div>`;
+    }
+    
+    function showToast(message, duration = 3000) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, duration);
+    }
+    
+    function backupData() {
+      if (!navigator.onLine) return;
+      
+      const data = {
+        veiculos: JSON.parse(localStorage.getItem('veiculos')),
+        usuarios: JSON.parse(localStorage.getItem('usuarios')),
+        condutores: JSON.parse(localStorage.getItem('condutores')),
+        timestamp: new Date().toISOString()
+      };
+      
+      // Simulação de envio para servidor
+      console.log('Dados enviados para backup:', data);
+      showToast('Dados sincronizados com sucesso');
+    }
+
+    // =============================================
+    // SERVICE WORKER (PWA)
+    // =============================================
+
+    function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        // Cria o service worker inline
+        const swCode = `
+          const CACHE_NAME = '${CACHE_NAME}';
+          const filesToCache = ['/'];
+
+          self.addEventListener('install', event => {
+            event.waitUntil(
+              caches.open(CACHE_NAME)
+                .then(cache => cache.addAll(filesToCache))
+            );
+          });
+
+          self.addEventListener('fetch', event => {
+            event.respondWith(
+              caches.match(event.request)
+                .then(response => response || fetch(event.request))
+                .catch(() => {
+                  return new Response('<h1>Você está offline</h1><p>Algumas funcionalidades podem estar disponíveis.</p>', {
+                    headers: { 'Content-Type': 'text/html' }
+                  });
+                })
+            );
+          });
+
+          self.addEventListener('activate', event => {
+            event.waitUntil(
+              caches.keys().then(cacheNames => {
+                return Promise.all(
+                  cacheNames.filter(name => name !== CACHE_NAME)
+                            .map(name => caches.delete(name))
+                );
+              })
+            );
+          });
+        `;
+
+        // Cria um blob com o código do service worker
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+
+        // Registra o service worker
+        navigator.serviceWorker.register(swUrl)
+          .then(registration => {
+            console.log('Service Worker registrado com sucesso:', registration.scope);
+          })
+          .catch(error => {
+            console.error('Falha ao registrar Service Worker:', error);
+          });
+      }
+    }
+
+    // =============================================
+    // INICIALIZAÇÃO
+    // =============================================
+
+    document.addEventListener('DOMContentLoaded', () => {
+      registerServiceWorker();
+      initApp();
+      
+      // Backup diário
+      setInterval(backupData, 24 * 60 * 60 * 1000);
+    });
+  </script>
+</body>
+</html>
